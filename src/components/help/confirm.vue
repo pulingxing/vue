@@ -13,9 +13,7 @@
 					<span  class="username">{{orders.user_name}}&nbsp;&nbsp;发起订单：{{orders.order_no}}</span>
 				</div>
 				<div class="goodsInfo">
-					<div class="imgBox">
-						<img :src="orders.goods_picture_url" alt="">
-					</div>
+					<img :src="orders.goods_picture_url" alt="">
 					<div class="info">
 						<img src="../../assets/images/bangtafu/icon_percentage.png" alt="">
 						<span class="title">{{orders.goods_name}}</span>
@@ -33,10 +31,20 @@
 						<span class="payAll" @click="payAll()">全部支付</span></span>
 					</div>
 				</div>
-				<div class="inputMoney">
-					<span>¥</span>
-					<input type="number" v-model="values" placeholder="请输入帮付金额" @focus="focus()" @blur="blur()">
-				</div>
+				<!-- <div class="inputMoney"> -->
+					<!-- <span>¥</span>
+					<input type="number" v-model="values" placeholder="请输入帮付金额" @focus="focus()"> -->
+					
+				
+				<!-- </div> -->
+				<van-field
+					v-model="values"
+					label="¥"
+					icon="clear"
+					placeholder="请输入帮他付金额"
+					@click-icon="values = ''"
+				/>
+
 				<div class="harvest" @click="handleClick">
 					<span>成单后预计获得抵付金:¥{{orders.amount_payment_scale}}</span>
 					<span>
@@ -64,7 +72,7 @@
 				<div class="payBtn" @click="sureClick()">确认支付</div>
 			</footer>
 
-			<v-pay @payClicked="payClick" v-if="payShow" :pay="values"></v-pay>
+			
 		</div>
 	</transition>
 </template>
@@ -88,6 +96,7 @@
 			};
 		},
 		created() {
+			window.iosPayClick = this.iosPayClick;
 			let orderId = this.preview;
 			this.$api({
                 method: 'post',
@@ -102,16 +111,13 @@
 				// console.log(this.orders)
             }).catch(function(error) {
                 alert(error)
-			});
-			hybrid.helpPayClick = this.helpPayClick  
+			});  
 		},
 		methods: {
 			handleClick() {
 		        this.popupVisible = !this.popupVisible;
 			},
-			payClick() {
-				this.payShow = !this.payShow;
-			},
+			
 			confirmClick() {
             	this.$emit('confirmClicked')
 			},
@@ -133,14 +139,10 @@
 				}
 			},
 			// 调用原生
-			helpPayClick() {
-				let orderIds = this.helpDatas.order_user_id;
-				let orderType = 15
-				window.webkit.messageHandlers.QBhelpPayClick.postMessage({order_ids:orderIds,orderType:15}); 
-			},
 			payAll() {
 				let payAll = this.orders.remaining_pay;
-				console.log(payAll);
+				
+				let orderType = 15
 				this.$api({
 						method: 'post',
 						url: 'order-help-pay/user-submit-pre-order',
@@ -150,12 +152,30 @@
 							current_pay: payAll
 						}
 					}).then((response) => {
-						this.helpDatas = response.data;
-						this.helpPayClick();
-						console.log(this.helpDatas)
+						this.helpDatas = response.data.data;
+						let orderIds = this.helpDatas.order_user_id;
+						if(this.GLOBAL.isAndroid){
+							console.log(orderIds,orderType);
+							this.payClick(orderIds,orderType);
+						}else {
+							this.iosPayClick();
+						}
 					}).catch(function(error) {
 						alert(error)
-				});	
+				});
+				// 这里是调用安卓支付
+				
+				
+				
+			},
+			// 调原生
+			payClick(orderIds,orderType) {
+				
+				window.android.andPay(orderIds,orderType);
+			},
+
+			iosPayClick() {
+				alert("ios找到我")
 			},
 		    sureClick() {
 				let minPrice = this.orders.min_payment_float;
@@ -178,7 +198,7 @@
 					}).then(() => {
 						
 					});
-				}else if(isOwn == 1 && first==1 && this.values != maxPrice){
+				}else if(isOwn == 1 && first != 1 && this.values != maxPrice){
 					Dialog.alert({
 						message: '您是发起人，需支付订单剩余的全部金额',
 						confirmButtonText:'重新填写'
@@ -199,9 +219,15 @@
 									current_pay: this.values
 								}
 							}).then((response) => {
-								this.helpDatas = response.data;
-								this.helpPayClick();
-								console.log(this.helpDatas)
+								this.helpDatas = response.data.data;
+								var orderIds = this.helpDatas.order_user_id;
+								var orderType = 15;
+								if(this.GLOBAL.isAndroid){
+									console.log(orderIds,orderType);
+									this.payClick(orderIds,orderType);
+								}else {
+									this.iosPayClick();
+								}
 							}).catch(function(error) {
 								alert(error)
 						});	
@@ -263,14 +289,12 @@
 				width: 100%;
 				padding: 3vw;
 				background: #fafafa;
-				.imgBox{
+			
+				img {
 					width: 30vw;
 					height: 30vw;
-					img {
-						width: 100%;
-						height: 100%;
-					}
 				}
+				
 				.info{
 					width: 65%;
 					height: 30vw;
@@ -401,7 +425,6 @@
 				}
 			}
 		}
-		
 
 		footer {
 			width: 100%;
@@ -409,7 +432,7 @@
 			position: fixed;
 			bottom: 0;
 			left: 0;
-			transition: bottom 2s;
+			// transition: bottom 0.2s;
 			.payBtn {
 				width: 100%;
 				height: 100%;

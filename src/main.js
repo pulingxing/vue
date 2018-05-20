@@ -13,6 +13,7 @@ import 'mint-ui/lib/style.css'
 import 'vant/lib/vant-css/index.css'
 import './assets/my-mint.less'
 import vConsole from 'vconsole'
+import global_ from './components/Global'
 
 
 Vue.use(Mint);
@@ -21,7 +22,7 @@ Vue.use(VueClipboard);
 Vue.config.productionTip = false
 Vue.prototype.$api = api;
 Vue.prototype.$hybrid = hybrid;
-
+Vue.prototype.GLOBAL = global_
 
 /* eslint-disable no-new */
 new Vue({

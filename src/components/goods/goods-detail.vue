@@ -12,7 +12,7 @@
                         <mt-tab-item id="details">详情</mt-tab-item>
                     </mt-navbar>
                     <div>
-                        <span class="share" @click="shareClick()"></span>
+                        <span class="share" @click="shareClick(),IosShareClick()"></span>
                     </div>
                 </div> 
             </header>
@@ -58,18 +58,21 @@
                                 <div class="information">
                                     <h1>{{goods.goods_name}}</h1>
                                     <div class="price-stock">
-                                        <span class="price">￥{{goods.price_coupon}}元</span>
-                                        <span  class="stock">库存:{{goods.goods_inventory}}件</span>
+                                        <span class="price">{{symbol}}{{goods.price_coupon}}
+                                            <!-- <i class="original-price">¥{{goods.price}}</i> -->
+                                        </span>
+                                        
+                                        <span  class="stock">{{text}}{{goods.goods_inventory}}{{unit}}</span>
                                     </div>  
                                 </div>
 
                                 <ul>
                                     <li class="service" @click="handleClick">
-                                        <div v-for="s in goods.sales_services" :key="s.id">
+                                        <div class="icon" v-for="s in goods.sales_services" :key="s.id">
                                             <img src="../../assets/images/bangtafu/icon_percentage.png" alt="">
                                             <span >{{s.services_name}}</span>
                                         </div>
-                                        <span><img class="arrow" src="../../assets/images/bangtafu/icon_arrow.png" alt=""></span> 
+                                        <span><img class="serviceArrow" src="../../assets/images/bangtafu/icon_arrow.png" alt=""></span> 
                                     </li>
                                     <!-- 邮费 -->
                                     <li @click="expressClick">
@@ -78,11 +81,11 @@
                                     </li>
                                     <!-- 发起规则 -->
                                     <li>
-                                        <span>发起规则</span>
+                                        <span>{{codex}}</span>
                                         <span><img class="arrow" src="../../assets/images/bangtafu/icon_arrow.png" alt=""></span>
                                     </li>
                                     <li class="rules">
-                                        <span v-for="r in goods.help_pay_initiate_rules">{{r}}</span>
+                                        <div v-for="r in goods.help_pay_initiate_rules">{{r}}</div>
                                     </li>
                                 </ul>
                                 <!-- 商品评论 -->
@@ -146,7 +149,7 @@
                 
                 <footer class="footer">
                     <div class="buy pay" @click="payClick()">
-                        单独购买<i>(￥{{goods.price}})</i>
+                        单独购买<i>(￥{{goods.price_coupon}})</i>
                     </div>
                     <div class="help pay" @click="replaceClick">找人代付</div>
                 </footer>
@@ -213,12 +216,7 @@
     import BScroll from 'better-scroll';
     import { Sku } from 'vant';
     import { Dialog } from 'vant';
-    // import { hybrid } from '../../app/app.js';
-    import Pay from '@/common/_pay.vue';
     export default {
-        components:{
-            'v-pay':Pay
-        },
         data() {
             return{
                 detailData:{}, 
@@ -239,7 +237,14 @@
                 sku:{},
                 hide_stock: true,
                 quota:1,
-                goodsId:""
+                goodsId:"",
+                specId:"",
+                num:"",
+                symbol:"¥",
+                text:"库存:",
+                unit:"件",
+                codex:"发起规则"
+
             };
         },
         methods: {
@@ -257,6 +262,30 @@
             expressClick() {
                 this.expressVisible = !this.expressVisible;
             },
+            // 单独购买
+            payClick() {
+                let inventory = this.goods.goods_inventory;
+                let gid = this.goods.goods_id;
+                let specId = 0;
+
+                if(!window.token){
+                    Dialog.confirm({
+                        message: '您还没登录,请登录',
+                        confirmButtonText:'去登陆'
+                    }).then(() => { 
+                        //这里调用原生方法   
+                    }).catch(() => {
+                    });
+                }else if(inventory== 0){ 
+                    Dialog.alert({
+                        message: '该商品库存不足'
+                        }).then(() => {
+                        return
+                    });
+                }else {
+                    this.showSpec = true;
+                }                 
+            },
             // 找人代付
             replaceClick() {
                 let inventory = this.goods.goods_inventory;
@@ -264,7 +293,7 @@
                 if(!window.token){
                     Dialog.confirm({
                         message: '您还没登录,请登录',
-                        confirmButtonText:'去登陆'
+                        confirmButtonText:'登陆'
                     }).then(() => { 
                         //这里调用原生方法   
                     }).catch(() => {
@@ -304,10 +333,14 @@
                     this.showSku = true
                 }
             },
-            // 获取skuData
+            // 获取找人代付skuData
             onBuyClicked(skuData) {
+                if(this.goods.spec_deep == 0){
+                    var  specId = 0;
+                }else {
+                    var  specId = skuData.selectedSkuComb.id;
+                }
                 let  gid  = skuData.goodsId;
-                let  specId = skuData.selectedSkuComb.id;
                 let  num = skuData.selectedNum;
                 this.$api({
                         method: 'post',
@@ -333,12 +366,15 @@
                     })
                 
             },
-            // 调原生
-
+            // 一下方法调用原生的方法
             buyOwnClicked(skuData) {
-                let  gid  = skuData.goodsId;
-                let  specId = skuData.selectedSkuComb.id;
-                let  num = skuData.selectedNum;
+                if(this.goods.spec_deep == 0){
+                    var  specId = 0;
+                }else {
+                    var  specId = skuData.selectedSkuComb.id;
+                }
+                var  gid  = skuData.goodsId;        
+                var  num = skuData.selectedNum;
                 this.$api({
                         method: 'post',
                         url: '/order-help-pay/pre-confer-order',
@@ -350,13 +386,19 @@
                     }).then((response) => {
                         this.confirmData = response.data;
                         if(this.confirmData.code == 0){
-                            this.$router.push({name:'单独购买',params:{goodsId:gid,goodsSpecId:specId}});
+                            if(this.GLOBAL.isAndroid){
+                                // 如果是Android，点击单独购买进入原生商品预览页
+                                this.preOrder(gid,specId,num);
+                                
+                            }else {
+                                this.IosPreOrder();
+                            }
                         }else {
                             Dialog.confirm({
-                                message: '您已经发起了帮他付订单',
-                                confirmButtonText:'去支付剩余'
+                                message: this.confirmData.message,
+                                confirmButtonText:'确认'
                             }).then(() => { 
-                                //这里调用原生方法   
+                                  
                             }).catch(() => {
                             });
                         }
@@ -365,19 +407,39 @@
                     })
                 
             },
-            
-            payClick:function() {
-
+            //Android
+            preOrder(gid,specId,num) {
+                var SkU = {
+                    'goods_id':gid,
+                    'goods_spec_id':specId,
+                    'goods_number':num
+                }
+                var goodsSku = JSON.stringify(SkU)
+                console.log(goodsSku)
+                window.android.andPreOrder(goodsSku);
             },
-            
-            shareClick:function() {  
-
+            shareClick: function() {  
+                var params = {
+                    "title":this.goods.goods_name,
+                    "goodsId": this.goods.goods_id,
+                    "href" :'http://www.youhulianchuang.com/',
+                    "picture" :'http://app.youhulianchuang.com//data/uploads/image/20180515/thumb-1526374092120631.png',
+                }
+                var share = JSON.stringify(params);
+                // console.log(share);
+                window.android.andShareClick(share); 
+                
             },
+            //Ios
+            IosPreOrder:function() {
+               
+            },
+
+            IosShareClick:function() {
+                
+            }
         },
-        mounted:function() {
-            this.$hybrid.payClick = this.payclick;
-            this.$hybrid.shareClick = this.shareClick; 
-        },
+       
         created() {
             this.goodsId = this.$route.params.goodsId;
             this.$api({
@@ -404,7 +466,7 @@
                 }).catch(function(error) {
                     alert(error)
                 });
-            // vue要把方法挂在到window下暴露给原生调用
+           
               
         }
     }
@@ -495,7 +557,10 @@
                     background: #fff;
                     h1 {
                         color: #2c3e50; 
-                        .fz(font-size,36);  
+                        .fz(font-size,36);
+                        overflow:hidden; 
+                        white-space:nowrap; 
+                        text-overflow:ellipsis;
                     }
                     .price-stock {
                         .flex();
@@ -505,7 +570,14 @@
                                 color: @cl;
                                 .fz(font-size,34);
                                 font-weight: 600;
+                                .original-price {
+                                    text-decoration: line-through;
+                                    color: #999999;
+                                    .fz(font-size,18);
+                                    color: #999999;
+                                }
                             }
+                           
                             &.stock {
                                 color: #ccc;
                                 .fz(font-size,24);
@@ -521,26 +593,34 @@
                     li {
                         .bt();
                         .flex();
-                        // flex-wrap: nowrap;
+                        
                         .fz(font-size,28);
                         padding: 3vw;
                         &.service {
+                            .bd();
+                            padding: 3vw;
+                            height: 7vh;
                             margin-bottom: 3vw;
-                            .fz(font-size,18);
-                            img {
-                                width: 4vw;
-                                height: 4vw;
-                                &.arrow {
-                                    width: 3vw;
-                                    height: 5vw;
+                            position: relative;
+                            .icon{
+                                .flex();
+                                .fz(font-size,18);
+                                img {
+                                    width: 4vw;
+                                    height: 4vw; 
                                 }
+                            }
+                            .serviceArrow {
+                                position: absolute;
+                                top: 50%;
+                                transform: translateY(-50%);
+                                right: 3vw;;
+                                width: 3vw;
+                                height: 5vw;
                             }
                         }
                         &.rules {
-                            margin-bottom: 3vw;
-                            span{
-                                display: block;
-                            }
+                            margin-bottom: 3vw; 
                         }
                     }
                 }

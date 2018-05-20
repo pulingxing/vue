@@ -8,7 +8,7 @@
 			</header>
 
 			<section>
-				<div class="userInfo" @click="editAddress()">
+				<div class="userInfo" @click="addressClick()">
 					<span  class="username">{{address.consignee}}</span>
 					<span class="address">{{address.region_name}}</span>
 					<span><img class="arrow" src="../../assets/images/bangtafu/icon_arrow.png" alt=""></span> 
@@ -56,24 +56,31 @@
 			</footer>
 
 			<v-success v-if="successShow" :success="successData"></v-success>
-
+			<v-address @addressEditClicked="addressEdit" v-if="addressShow" ></v-address>
+			<v-addressList @addressListClicked="addressList" v-if="addressListShow"></v-addressList>
 		</div>
 	</transition>
 </template>
 
 <script>
 	import Success from "@/components/goods/success.vue";
+	import Address from "@/components/address/addressEdit.vue";
+	import AddressList from "@/components/address/addressList.vue";
 	import { Dialog } from 'vant';
     export default {
 		props:['goodsInfo'],
 		components: {
-			'v-success':Success
+			'v-success':Success,
+			'v-address':Address,
+			'v-addressList':AddressList,
 		},
       	data(){
         	return {
 			  popupVisible:false,
 			  confirmVisible:true,
 			  successShow:false,
+			  addressShow:false,
+			  addressListShow:false,
 			  remnant:20,
 			  chose:'已选：',
 			  confirmData:{},
@@ -81,7 +88,21 @@
 			  inputWords:'',
 			  confirm:{},
 			  address:{},
-			  successData:{}
+			  successData:{},
+			  list: [
+                {
+                id: '1',
+                name: '张三',
+                tel: '13000000000',
+                address: '浙江省杭州市西湖区文三路 138 号东方通信大厦 7 楼 501 室'
+                },
+                {
+                id: '2',
+                name: '李四',
+                tel: '1310000000',
+                address: '浙江省杭州市拱墅区莫干山路 50 号'
+                }
+            ]
         	};
       	},
       	methods: {
@@ -145,8 +166,18 @@
 				})
 						
 			},
-			editAddress() {
-				window.webkit.messageHandlers.QBaddress.postMessage()
+			addressClick() {
+				if(!this.address){
+					this.addressShow = !this.addressShow
+				}else{
+					this.addressListShow = !this.addressListShow
+				}
+			},
+			addressEdit() {
+				this.addressShow = !this.addressShow
+			},
+			addressList() {
+				this.addressListShow = !this.addressListShow
 			}
 
 		},
@@ -335,7 +366,8 @@
 			left: 0;
 			position: fixed;
 			background: #fff;
-			bottom: 8vh;
+			// transition: bottom 0.2s;
+			// bottom: 8vh;
 			.priceBox {
 				width: 60%;
 				span{

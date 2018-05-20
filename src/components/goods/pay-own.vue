@@ -49,8 +49,8 @@
 				<button class="payBtn" @click="submitOrder">单独购买</button>
 				
 			</footer>
-            <v-pay @payClicked="payClick" v-if="payShow" :pay="confirm.price_total_format"></v-pay>
-			<v-success v-if="successShow" :success="successData"></v-success>
+            <!-- <v-pay @payClicked="payClick" v-if="payShow" :pay="confirm.price_total_format"></v-pay> -->
+			<!-- <v-success v-if="successShow" :success="successData"></v-success> -->
 
 		</div>
 	</transition>
@@ -92,21 +92,17 @@
 				this.confirmVisible = !this.confirmVisible;
 			},
 			submitOrder() {
-                this.payShow = !this.payShow;
-				// this.successShow = !this.successShow;
-				// let addressId = this.address.address_id;
-				// let goodsId = this.$route.params.goodsId;
-				// let goodsSpecId = this.$route.params.goodsSpecId;
-				// let thanksWords = this.inputWords;
+				this.successShow = !this.successShow;
+				let addressId = this.address.address_id;
+				let goodsId = this.$route.params.goodsId;
+				let goodsSpecId = this.$route.params.goodsSpecId;
+				let thanksWords = this.inputWords;
+				
 				this.$api({
 					method: 'post',
 					url: '/order/submit-pre-order',
 					data:{
-						token:this.GLOBAL.token,
-						goods_id:goodsId,
-						goods_spec_id:goodsSpecId,
-						address_id:addressId,
-						thanks_words:thanksWords
+						goods_redis_key:0	
 					}
 				}).then((response) => {
                     this.successData = response.data.data;
@@ -124,9 +120,9 @@
             let num = this.$route.params.number;
 			this.$api({
 				method: 'post',
-				url: '/order/pre-confer-order',
+				url: '/order-help-pay/pre-confer-order',
 				data:{
-					token:this.GLOBAL.token,
+					token:window.token,
 					goods_spec_id: this.$route.params.goodsSpecId,
 					goods_id: this.$route.params.goodsId
 				}

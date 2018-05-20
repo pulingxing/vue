@@ -9,9 +9,9 @@
                 </a>   
             </mt-swipe-item>
         </mt-swipe>
-         <van-notice-bar mode="closeable">
-            132****0812  刚刚以0元抢到了一件商品。
-        </van-notice-bar>
+        <!-- <van-notice-bar mode="closeable" v-for="item in barrage" :key="item.id">
+            {{item.show_string}}
+        </van-notice-bar> -->
     </div>
 
 </template>
@@ -21,9 +21,24 @@
         props:['banner'],
         data() {
             return { 
-                //  headImg:"../../assets/images/bangtafu/icon_tab_mine.png"
+                baarrage:[],
+                // headImg:"../../assets/images/bangtafu/icon_tab_mine.png"
             }
-        },   
+        }, 
+        created() {
+            this.$api({
+                method:'post',
+                url:'/barrage/get-barrages',
+                data:{
+                    barrage_location:'index'
+                }
+            }).then((response) => {
+                this.barrageData = response.data;
+                this.barrage = this.barrageData.data;
+            }).catch(function(error) {
+                alert(error)
+            }) 
+        }  
     }
 </script>
  
@@ -41,17 +56,15 @@
                 height:100%;
             }
         }
-        .van-notice-bar {
-            // z-index: 600;
+        .van-notice-bar { 
             width: 50vw;
-            background: #999999;
+            background: #e9e6e6;
             border-radius: 20px;
             position: absolute;
             top: 2vw;
             left: 2vw;
             color: #333;
-            padding: 9px 26px 9px 4px;
-           
+            padding: 9px 26px 9px 4px;   
         }
     }      
 </style>

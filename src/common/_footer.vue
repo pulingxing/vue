@@ -51,7 +51,7 @@ export default {
             }else{
                 Dialog.confirm({
                     message: '您还没登录,请登录',
-                    confirmButtonText:'去登陆'
+                    confirmButtonText:'登陆'
                 }).then(() => { 
                     //这里调用原生方法   
                 }).catch(() => {

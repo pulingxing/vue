@@ -11,6 +11,11 @@
                             <img :src="orderDatas.goods_url" alt="">
                         </div>
                         <div class="orderInfo">
+                            <div class="thanksWords" v-if="orderDatas.thanks_words">
+                                <!-- 你好的举动大家大酒店时记得哈埃及和阿萨德加合法 -->
+                                {{orderDatas.thanks_words}}
+                            </div>
+                            <img v-if="orderDatas.thanks_words" class="thanksWordsArrow" src="../../assets/images/bangtafu/box_jiantou.png" alt="">
                             <div class="top">
                                 <div class="content">
                                     <img :src="orderDatas.user_portrait">
@@ -83,10 +88,10 @@
             
             <footer>
                 <div class="box">
-                    <router-link class="metoo footer" :to="{name:'发起订单'}">
+                    <router-link class="metoo footer" :to="{name:'详情页',params:{goodsId:gid}}">
                     我也发起
                     </router-link>
-                    <div class="payBtn footer" @click="confirmClick">
+                    <div class="payBtn footer" @click="helpPayBtnClick">
                     帮他付
                     </div> 
                 </div> 
@@ -111,6 +116,7 @@ import Name from '@/common/_name.vue';
 import Confirm from  "@/components/help/confirm";
 import CountDown from '@/common/_countdown.vue';
 import BScroll from 'better-scroll';
+import { Dialog } from 'vant';
 export default {
     name:"order",
     components:{
@@ -128,7 +134,8 @@ export default {
             startTime:0,
             endTime:0,
             listHeight:[],  
-            scrollY:0  
+            scrollY:0,
+            gid:0 
         }
     },
     methods:{
@@ -145,6 +152,20 @@ export default {
         },
         confirmClick() {
             this.showConfirm = !this.showConfirm;
+        },
+        helpPayBtnClick() {
+            if(!window.token){
+                    Dialog.confirm({
+                        message: '您还没登录,请登录',
+                        confirmButtonText:'登陆'
+                    }).then(() => { 
+                        //这里调用原生方法   
+                    }).catch(() => {
+                    }); 
+                }else {
+                    this.showConfirm = !this.showConfirm;
+                }
+            
         }
     },
    
@@ -159,6 +180,7 @@ export default {
         }).then((res)=>{
             this.orders = res.data;
             this.orderDatas = this.orders.data;
+            this.gid = this.orderDatas.goods_id;
             this.startTime = this.orderDatas.remaining_begin_time;
             this.endTime = this.orderDatas.remaining_end_time;
             this.$nextTick(() => {
@@ -244,6 +266,29 @@ export default {
                     border-radius: 3vw;
                     .fz(font-size,28);
                     box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); 
+                    .thanksWords {
+                        overflow:hidden; 
+                        white-space:nowrap; 
+                        text-overflow:ellipsis;
+                        position: absolute;
+                        // width: 40vw;
+                        padding: 0 3vw;
+                        // height: 12vw;
+                        top: -14vw;
+                        left: 10vw;;
+                        color: #fff;
+                        border-radius: 4px;
+                        text-align: center;
+                        line-height: 12vw;
+                        background: rgba(0, 0, 0, 0.6);
+                    }
+                    .thanksWordsArrow {
+                        position: absolute;
+                        top: -2vw;
+                        left: 10vw;;
+                        width: 6vw;
+
+                    }
                     .top {
                         .flex();
                         height: 12vw;

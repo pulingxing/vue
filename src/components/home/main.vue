@@ -20,7 +20,9 @@
                             <img v-lazy="item.goods_url" onerror="this.src='../../assets/images/bangtafu/default.png'" alt="">
                             <div class="box">
                             <span class="intro">{{item.goods_name}}</span>
-                            <span class="price">¥{{item.price}}</span>
+                            <span class="price">¥{{item.price}}
+                                <!-- <i class="original-price">¥{{item.price}}</i> -->
+                            </span>
                             <span class="income">{{item.amount_payment_scale}}</span>
                             </div>
 
@@ -85,6 +87,7 @@
         data() {
             return {
                 selected: 'recommend',
+               
                 hot:{},
                 me:{}
             }
@@ -100,8 +103,8 @@
                         page:1 
                     }
                 }).then((response) => {
-                    this.indexData = response.data;
-                    this.hot = this.indexData.data.goods; 
+                    
+                    
                 }).catch(function(error) {
                     alert(error)
                 })
@@ -130,7 +133,11 @@
                         message: '您还没登录,请登录',
                         confirmButtonText:'去登陆'
                     }).then(() => {
-                        this.loginClick();
+                        if(this.GLOBAL.isAndroid){
+                            this.loginClick();
+                        }else {
+                            this.iosloginClick();
+                        }
                     }).catch(() => {
                         this.selected='recommend'
                     });
@@ -153,14 +160,12 @@
             },
             
             loginClick() {
-                window.webkit.messageHandlers.LGclick.postMessage()
+                window.android.andLogin();   
             },
+            
+           
         },
 
-        
-        created() {
-            hybrid.loginClick = this.loginClick  
-        }
 
         
     }
@@ -218,6 +223,12 @@
                             display: block;
                             .fz(font-size, 34);
                             font-weight: 600;
+                            .original-price {
+                                    text-decoration: line-through;
+                                    color: #999999;
+                                    .fz(font-size,18);
+                                    color: #999999;
+                                }
                             }
                             &.income {
                             color: #ffffff;
